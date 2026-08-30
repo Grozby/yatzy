@@ -856,15 +856,13 @@ function showGameOverModal() {
   const score = state.total_score;
   let feedback = '';
   if (score >= 230) {
-    feedback = '🏆 LEGENDARY RUN! Matched top peak performance (>230 pts)!';
-  } else if (score >= 200) {
-    feedback = '🌟 MASTER PLAY! Superb decision making across all rolls!';
-  } else if (score >= 170) {
-    feedback = '👏 EXCELLENT SCORE! Above average model rollout!';
-  } else if (score >= 130) {
-    feedback = '🎲 SOLID GAME! Good balance of upper & lower categories.';
+    feedback = '🏆 Outstanding game! Top tier Yatzy score!';
+  } else if (score >= 180) {
+    feedback = '🔥 Great performance! Well above average!';
+  } else if (score >= 140) {
+    feedback = '👍 Solid game! Good decision making!';
   } else {
-    feedback = '🔄 Tough dice rolls! Hit New Game to try for the 230+ high score!';
+    feedback = '🔄 Tough dice rolls! Hit New Game to try again!';
   }
   dom.modalPerformanceFeedback.textContent = feedback;
 

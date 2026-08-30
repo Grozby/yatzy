@@ -329,7 +329,7 @@ with gr.Blocks(title="Yatzy AI Studio") as demo:
         """
         # 🎲 Yatzy AI Studio
         ### Deep Reinforcement Learning (PPO) Player & Interactive Assistant
-        *Trained on Yatzy with peak benchmark score reaching 230+ points. Play interactively with real-time AI move recommendations, or watch autonomous agent play.*
+        *Play interactively with real-time Deep RL move recommendations, or watch autonomous agent play.*
         """
     )
 

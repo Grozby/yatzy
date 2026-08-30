@@ -47,7 +47,7 @@ class GameService:
             checkpoints.append(
                 {
                     "path": str(root_ckpt.resolve()),
-                    "name": "PPO Model (230+ Peak)",
+                    "name": "Trained PPO Model",
                     "relative_path": "ppo_yatzy.pt",
                     "score_mean": 226.4,
                     "info": "Trained PPO Policy",

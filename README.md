@@ -23,7 +23,7 @@ tags:
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
-> 🚀 **Live Demo**: Try the trained 230+ benchmark AI agent live in your browser on **[Hugging Face Spaces (Grozby/yatzy)](https://huggingface.co/spaces/Grozby/yatzy)**!
+> 🚀 **Live Demo**: Try the trained AI agent live in your browser on **[Hugging Face Spaces (Grozby/yatzy)](https://huggingface.co/spaces/Grozby/yatzy)**!
 
 A Deep Reinforcement Learning (PPO) agent for Yatzy with an interactive Web GUI and real-time AI assistant.
 
@@ -31,7 +31,7 @@ A Deep Reinforcement Learning (PPO) agent for Yatzy with an interactive Web GUI 
 
 ## 🌟 Overview
 
-This project implements a complete Yatzy game environment, a Proximal Policy Optimization (PPO) reinforcement learning agent capable of scoring 230+ points, and an interactive Web GUI for human-AI play and agent visualization.
+This project implements a complete Yatzy game environment, a Proximal Policy Optimization (PPO) reinforcement learning agent, and an interactive Web GUI for human-AI play and agent visualization.
 
 ### Key Features
 - **🎮 Interactive Web GUI**: 3D styled dice, interactive scorecard, roll animations, and synthesized sound effects.

@@ -1,13 +1,3 @@
----
-title: Yatzy AI Studio
-emoji: 🎲
-colorFrom: blue
-colorTo: green
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 # 🎲 Yatzy AI Studio
 
 A Deep Reinforcement Learning (PPO) agent for Yatzy with an interactive Web GUI and real-time AI assistant.

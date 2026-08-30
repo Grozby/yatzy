@@ -24,8 +24,11 @@ def agent_inference_ready():
     """Hugging Face ZeroGPU heartbeat function."""
     return "Yatzy PPO Agent Ready"
 
-# Define Gradio demo and mount our custom Yatzy FastAPI application
-demo = gr.Blocks(title="Yatzy AI Studio")
+# Initialize Gradio Blocks using context manager (required in Gradio 6+)
+with gr.Blocks(title="Yatzy AI Studio") as demo:
+    pass
+
+# Mount FastAPI application
 app = gr.mount_gradio_app(fastapi_app, demo, path="/_gradio")
 
 if __name__ == "__main__":

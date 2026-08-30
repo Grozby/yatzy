@@ -1,3 +1,21 @@
+---
+title: Yatzy AI Studio
+emoji: 🎲
+colorFrom: blue
+colorTo: green
+sdk: gradio
+app_file: app.py
+pinned: false
+license: mit
+short_description: Deep RL (PPO) agent for Yatzy with interactive Web GUI & AI suggestions
+tags:
+  - reinforcement-learning
+  - ppo
+  - pytorch
+  - fastapi
+  - game-ai
+---
+
 # 🎲 Yatzy AI Studio
 
 A Deep Reinforcement Learning (PPO) agent for Yatzy with an interactive Web GUI and real-time AI assistant.

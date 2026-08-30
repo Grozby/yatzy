@@ -1,0 +1,37 @@
+defaults:
+  - _self_
+
+# Training Hyperparameters
+training:
+  num_envs: 64
+  num_epochs: 2000
+  rollout_steps: 256
+  batch_size: 512
+  gamma: 0.995
+  lam: 0.95
+  clip_eps: 0.1
+  value_coef: 0.5
+  entropy_coef: 0.01
+  lr: 0.0003
+  min_lr: 0.00005
+  min_entropy: 0.005
+  save_interval: 100
+  eval_interval: 50
+  experiments_base_dir: "experiments"
+
+# Neural Network Architecture
+model:
+  hidden: 256
+
+# Game Environment Configuration
+env:
+  num_dices: 5
+  max_rolls: 3
+  upper_section_score_threshold: 63
+  upper_section_bonus_points: 50
+
+# Hydra Execution Settings
+hydra:
+  run:
+    dir: .
+  output_subdir: null

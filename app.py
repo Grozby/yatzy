@@ -1,9 +1,10 @@
 """
-Entry point for Hugging Face ZeroGPU Spaces.
-Serves the Yatzy AI Studio application with real-time RL move suggestions.
+Entry point for Hugging Face Spaces (Gradio SDK / ZeroGPU).
+Mounts the Yatzy AI Studio FastAPI application onto Gradio and serves on port 7860.
 """
 
 import os
+import uvicorn
 import gradio as gr
 
 # Safe import of Hugging Face ZeroGPU spaces
@@ -17,19 +18,17 @@ except ImportError:
                 return lambda f: f
             return fn
 
-from src.gui.server import app as fastapi_app
-
 @spaces.GPU
 def agent_inference_ready():
     """Hugging Face ZeroGPU heartbeat function."""
     return "Yatzy PPO Agent Ready"
 
-# Initialize Gradio Blocks using context manager (required in Gradio 6+)
-with gr.Blocks(title="Yatzy AI Studio") as demo:
-    pass
+from src.gui.server import app as fastapi_app
 
-# Mount FastAPI application
+# Define Gradio demo and mount onto FastAPI
+demo = gr.Blocks(title="Yatzy AI Studio")
 app = gr.mount_gradio_app(fastapi_app, demo, path="/_gradio")
 
 if __name__ == "__main__":
-    demo.launch()
+    port = int(os.environ.get("PORT", 7860))
+    uvicorn.run(app, host="0.0.0.0", port=port)

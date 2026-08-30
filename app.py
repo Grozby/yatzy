@@ -31,18 +31,21 @@ def format_dice_html(state: dict, suggestions: dict) -> str:
     dices = state.get("dices", [1, 1, 1, 1, 1])
     keep_probs = suggestions.get("dice_keep_probs", [0.5] * 5)
     rec_mask = suggestions.get("recommended_keep_mask", [False] * 5)
+    is_game_over = state.get("is_game_over", False)
 
     cards = []
     for i, d in enumerate(dices):
-        is_rec = rec_mask[i]
+        is_rec = rec_mask[i] and not is_game_over
         prob = int(keep_probs[i] * 100)
         border_color = "#06b6d4" if is_rec else "#334155"
         bg_color = "#082f49" if is_rec else "#1e293b"
-        tag = (
-            f'<span style="background: rgba(6,182,212,0.25); color: #38bdf8; padding: 2px 6px; border-radius: 6px; font-size: 11px; font-weight: 700;">★ KEEP ({prob}%)</span>'
-            if is_rec
-            else f'<span style="background: rgba(148,163,184,0.15); color: #94a3b8; padding: 2px 6px; border-radius: 6px; font-size: 11px;">REROLL ({prob}%)</span>'
-        )
+        
+        if is_game_over:
+            tag = '<span style="background: rgba(148,163,184,0.15); color: #94a3b8; padding: 2px 6px; border-radius: 6px; font-size: 11px;">Final</span>'
+        elif is_rec:
+            tag = f'<span style="background: rgba(6,182,212,0.25); color: #38bdf8; padding: 2px 6px; border-radius: 6px; font-size: 11px; font-weight: 700;">★ KEEP ({prob}%)</span>'
+        else:
+            tag = f'<span style="background: rgba(148,163,184,0.15); color: #94a3b8; padding: 2px 6px; border-radius: 6px; font-size: 11px;">REROLL ({prob}%)</span>'
 
         cards.append(
             f"""
@@ -66,6 +69,7 @@ def format_scorecard_html(state: dict, suggestions: dict) -> str:
     categories = state.get("categories", [])
     rankings = suggestions.get("category_rankings", [])
     rank_map = {r["index"]: r for r in rankings}
+    is_game_over = state.get("is_game_over", False)
 
     upper_rows = []
     lower_rows = []
@@ -82,6 +86,10 @@ def format_scorecard_html(state: dict, suggestions: dict) -> str:
             score_display = f'<strong style="color: #f8fafc; font-family: monospace; font-size: 15px;">{score}</strong>'
             meta_display = '<span style="color: #64748b; font-size: 12px;">✓ Scored</span>'
             row_bg = "rgba(255, 255, 255, 0.02)"
+        elif is_game_over:
+            score_display = '<span style="color: #64748b; font-family: monospace;">-</span>'
+            meta_display = '<span style="color: #64748b; font-size: 12px;">-</span>'
+            row_bg = "transparent"
         else:
             prob = int(ai_info.get("probability", 0) * 100)
             rank = ai_info.get("rank", None)
@@ -116,6 +124,8 @@ def format_scorecard_html(state: dict, suggestions: dict) -> str:
     total_score = state.get("total_score", 0)
     progress_pct = min(100, int((upper_sum / 63) * 100))
 
+    turn_footer = "Game Completed (15/15)" if is_game_over else f"Turn {min(state.get('turn_number', 0) + 1, 15)} / 15"
+
     return f"""
     <div style="background: #111827; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); overflow: hidden; font-family: system-ui, sans-serif; color: #f8fafc;">
         <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
@@ -148,7 +158,7 @@ def format_scorecard_html(state: dict, suggestions: dict) -> str:
                 <tr style="background: rgba(16,185,129,0.15); border-top: 2px solid #10b981; font-weight: 800; font-size: 16px;">
                     <td style="padding: 12px; color: #34d399;">GRAND TOTAL</td>
                     <td style="padding: 12px; text-align: center; color: #34d399; font-family: monospace; font-size: 20px;">{total_score}</td>
-                    <td style="padding: 12px; text-align: right; font-size: 13px; color: #a7f3d0;">Turn {state.get('turn_number', 0) + 1} / 15</td>
+                    <td style="padding: 12px; text-align: right; font-size: 13px; color: #a7f3d0;">{turn_footer}</td>
                 </tr>
             </tbody>
         </table>
@@ -160,17 +170,34 @@ def get_ui_bundle():
     """Extract and format complete state bundle for Gradio UI components."""
     st = service.get_game_state()
     sug = service.get_model_suggestions()
+    is_game_over = st.get("is_game_over", False)
+    total_score = st.get("total_score", 0)
 
-    turn_info = f"**Turn {st['turn_number'] + 1} / {st['total_turns']}** | Phase: **{st['current_action_type']}** | Rolls Left: **{st['rolls_remaining']}** | Current Score: **{st['total_score']} pts**"
+    if is_game_over:
+        turn_info = f"🏆 **GAME COMPLETED** | Final Grand Score: **{total_score} points** | All 15 turns finished"
+    else:
+        current_turn = min(st["turn_number"] + 1, 15)
+        turn_info = f"**Turn {current_turn} / 15** | Phase: **{st['current_action_type']}** | Rolls Left: **{st['rolls_remaining']}** | Current Score: **{total_score} pts**"
+
     dice_html = format_dice_html(st, sug)
     scorecard_html = format_scorecard_html(st, sug)
 
-    exp_score = f"{round(sug.get('expected_value', 0))} pts" if sug.get("expected_value") else "--"
-    reasoning_md = f"""
+    if is_game_over:
+        bonus_status = "Achieved (+50 pts)" if st.get("has_upper_bonus") else "Missed"
+        rating = "🌟 Grandmaster" if total_score >= 260 else "🥇 Master" if total_score >= 220 else "🥈 Expert" if total_score >= 180 else "🥉 Player"
+        reasoning_md = f"""
+### 🏆 Game Finished!
+- **Final Score**: `{total_score} pts` ({rating})
+- **Upper Bonus**: `{bonus_status}` (Upper Sum: {st.get('upper_section_sum', 0)}/63)
+- Click **"🔄 New Game"** or **"▶ Run Full AI Game"** to play a fresh game!
+        """
+    else:
+        exp_score = f"{round(sug.get('expected_value', 0))} pts" if sug.get("expected_value") else "--"
+        reasoning_md = f"""
 ### 🧠 Model Reasoning & Strategy
 - **Expected Final Score ($V(s)$)**: `{exp_score}`
 - **Recommendation**: {sug.get('explanation', 'Analyzing hand...')}
-    """
+        """
 
     # Build options for category selection dropdown
     cat_options = [
@@ -179,8 +206,8 @@ def get_ui_bundle():
         if not cat["is_filled"]
     ]
 
-    is_dice_phase = st["current_action_type"] == "SELECT_DICE" and not st["is_game_over"]
-    is_cat_phase = st["current_action_type"] == "SELECT_CATEGORY" and not st["is_game_over"]
+    is_dice_phase = st["current_action_type"] == "SELECT_DICE" and not is_game_over
+    is_cat_phase = st["current_action_type"] == "SELECT_CATEGORY" and not is_game_over
 
     return (
         turn_info,
@@ -199,6 +226,10 @@ def get_ui_bundle():
 @spaces.GPU
 def on_roll_dice(selected_keep_positions: List[str]):
     """Execute a dice roll keeping chosen dice."""
+    if service.is_game_over:
+        gr.Info("Game is complete! Click 'New Game' to start a new match.")
+        return get_ui_bundle()
+
     keep_mask = [False] * 5
     for item in (selected_keep_positions or []):
         try:
@@ -215,6 +246,8 @@ def on_roll_dice(selected_keep_positions: List[str]):
 @spaces.GPU
 def on_apply_ai_keep():
     """Apply the AI's recommended keep selection to the checkboxes."""
+    if service.is_game_over:
+        return []
     sug = service.get_model_suggestions()
     rec_mask = sug.get("recommended_keep_mask", [False] * 5)
     selected = [f"Die {i+1}" for i, k in enumerate(rec_mask) if k]
@@ -224,33 +257,61 @@ def on_apply_ai_keep():
 @spaces.GPU
 def on_score_category(category_index: int):
     """Score the selected category and advance to the next turn."""
+    if service.is_game_over:
+        gr.Info("Game is complete! Click 'New Game' to start a new match.")
+        return get_ui_bundle()
+
     if category_index is not None:
         service.select_category(int(category_index))
+
+    if service.is_game_over:
+        gr.Info(f"🎉 Game Completed! Final Score: {service.env.get_score()} points!")
+
     return get_ui_bundle()
 
 
 @spaces.GPU
 def on_step_ai():
     """Execute 1 optimal RL action."""
+    if service.is_game_over:
+        service.start_new_game()
+        gr.Info("🎲 Started a fresh game!")
+        return get_ui_bundle()
+
     service.step_ai()
+
+    if service.is_game_over:
+        gr.Info(f"🎉 Game Completed! Final Score: {service.env.get_score()} points!")
+
     return get_ui_bundle()
 
 
 @spaces.GPU
 def on_auto_play() -> Generator:
     """Run an entire autonomous game yielding updates turn by turn."""
+    # If the game was already over, automatically start a fresh one!
+    if service.is_game_over:
+        service.start_new_game()
+        yield get_ui_bundle()
+        time.sleep(0.2)
+
     step_count = 0
     while not service.is_game_over and step_count < 60:
         service.step_ai()
         step_count += 1
         yield get_ui_bundle()
-        time.sleep(0.35)
+        time.sleep(0.3)
+
+    if service.is_game_over:
+        final_score = int(service.env.get_score())
+        gr.Info(f"🎉 AI Game Completed! Final Score: {final_score} points!")
 
 
 @spaces.GPU
 def on_new_game():
-    """Reset and start a fresh Yatzy game."""
+    """Reset and start a fresh Yatzy game with random seed."""
     service.start_new_game()
+    gr.Info("🎲 New game started! Fresh dice rolled.")
     return get_ui_bundle()
 
 

@@ -120,7 +120,9 @@ class GameService:
 
     def start_new_game(self, seed: Optional[int] = None) -> Dict[str, Any]:
         """Reset the environment to start a fresh game."""
-        obs, info = self.env.reset(seed=seed)
+        import time
+        actual_seed = seed if seed is not None else int(time.time() * 1000000) % 2_000_000
+        obs, info = self.env.reset(seed=actual_seed)
         self.is_game_over = False
         self.last_step_info = {
             "message": "New game started. Roll 1 of 3.",

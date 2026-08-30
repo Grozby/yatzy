@@ -7,7 +7,7 @@ sdk: gradio
 app_file: app.py
 pinned: false
 license: mit
-short_description: Deep RL (PPO) agent for Yatzy with interactive Web GUI & AI suggestions
+short_description: Deep RL agent & interactive Web GUI for Yatzy
 tags:
   - reinforcement-learning
   - ppo

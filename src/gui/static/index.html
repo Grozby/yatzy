@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yatzy AI Studio | Interactive Player & Agent Visualizer</title>
+  <meta name="description" content="Play Yatzy with real-time AI move suggestions powered by Deep Reinforcement Learning (PPO), or watch full autonomous agent play.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="theme-dark">
+  <!-- Top Navigation / Header -->
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="brand-logo">
+        <span class="dice-icon">🎲</span>
+      </div>
+      <div>
+        <h1 class="brand-title">Yatzy AI Studio</h1>
+        <p class="brand-subtitle">PPO Deep RL Agent & Interactive Assistant</p>
+      </div>
+    </div>
+
+    <div class="header-controls">
+      <!-- Checkpoint Selector -->
+      <div class="control-group checkpoint-picker">
+        <label for="checkpointSelect" class="control-label">Model Checkpoint:</label>
+        <div class="select-wrapper">
+          <select id="checkpointSelect" title="Select Model Checkpoint">
+            <option value="">Loading checkpoints...</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- High Score Badge -->
+      <div class="stat-pill high-score-pill">
+        <span class="pill-label">Best Score</span>
+        <span id="bestScoreDisplay" class="pill-value">--</span>
+      </div>
+
+      <!-- Sound Toggle -->
+      <button id="soundToggleBtn" class="icon-btn" title="Toggle Sound Effects" aria-label="Toggle Sound">
+        <span id="soundIcon">🔊</span>
+      </button>
+
+      <!-- New Game Button -->
+      <button id="newGameBtn" class="btn btn-secondary">
+        <span>🔄</span> New Game
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Application Container -->
+  <main class="app-layout">
+    <!-- Left Column: Game Arena & Controls -->
+    <section class="arena-column">
+      <!-- Game Status Banner -->
+      <div class="status-banner card">
+        <div class="status-turn">
+          <span class="status-label">Turn</span>
+          <span id="turnDisplay" class="status-value highlight-gold">1 / 15</span>
+        </div>
+        <div class="status-phase">
+          <span class="status-label">Current Phase</span>
+          <span id="phaseDisplay" class="phase-badge badge-roll">Roll / Keep Dice</span>
+        </div>
+        <div class="status-rolls">
+          <span class="status-label">Rolls Left</span>
+          <div id="rollsDots" class="rolls-indicator">
+            <span class="roll-dot active"></span>
+            <span class="roll-dot active"></span>
+            <span class="roll-dot"></span>
+          </div>
+        </div>
+        <div class="status-score">
+          <span class="status-label">Total Score</span>
+          <span id="totalScoreHeader" class="status-value highlight-emerald">0</span>
+        </div>
+      </div>
+
+      <!-- Dice Board -->
+      <div class="dice-board card">
+        <div class="board-header">
+          <div class="board-title-group">
+            <h2 class="section-title">Dice Tray</h2>
+            <span id="diceTip" class="board-subtitle">Click dice to Keep or Re-roll</span>
+          </div>
+          <div class="quick-dice-actions">
+            <button id="keepAllBtn" class="btn-sm btn-ghost" title="Keep All Dice">Keep All</button>
+            <button id="clearKeptBtn" class="btn-sm btn-ghost" title="Clear Kept Dice">Reroll All</button>
+            <button id="applyAiKeepBtn" class="btn-sm btn-accent" title="Apply AI Keep Selection">
+              <span class="ai-sparkle">✨</span> Apply AI Keep
+            </button>
+          </div>
+        </div>
+
+        <!-- 5 Interactive Dice -->
+        <div class="dice-container" id="diceContainer">
+          <!-- Rendered dynamically by JS -->
+          <div class="die-slot" data-index="0"><div class="die value-1"><div class="pip center"></div></div></div>
+          <div class="die-slot" data-index="1"><div class="die value-2"><div class="pip top-left"></div><div class="pip bottom-right"></div></div></div>
+          <div class="die-slot" data-index="2"><div class="die value-3"><div class="pip top-left"></div><div class="pip center"></div><div class="pip bottom-right"></div></div></div>
+          <div class="die-slot" data-index="3"><div class="die value-4"><div class="pip top-left"></div><div class="pip top-right"></div><div class="pip bottom-left"></div><div class="pip bottom-right"></div></div></div>
+          <div class="die-slot" data-index="4"><div class="die value-5"><div class="pip top-left"></div><div class="pip top-right"></div><div class="pip center"></div><div class="pip bottom-left"></div><div class="pip bottom-right"></div></div></div>
+        </div>
+
+        <!-- Manual Action Controls -->
+        <div class="player-actions">
+          <button id="rollDiceBtn" class="btn btn-primary btn-lg pulse-glow">
+            <span class="btn-icon">🎲</span>
+            <span id="rollBtnText">Roll Dice (2 Left)</span>
+          </button>
+          <button id="applyAiActionBtn" class="btn btn-emerald btn-lg">
+            <span class="btn-icon">⚡</span>
+            <span id="aiActionBtnText">Apply AI Move</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Autonomous Agent Auto-Play Controls -->
+      <div class="auto-panel card">
+        <div class="auto-header">
+          <div class="auto-title-group">
+            <div class="bot-badge">🤖 AGENT MODE</div>
+            <h3 class="auto-title">Autonomous PPO Play</h3>
+          </div>
+          <div class="auto-actions">
+            <button id="autoStepBtn" class="btn btn-sm btn-outline">
+              <span>⏩</span> Step AI
+            </button>
+            <button id="autoPlayToggleBtn" class="btn btn-sm btn-primary">
+              <span id="autoPlayIcon">▶</span>
+              <span id="autoPlayText">Auto Play Game</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="auto-settings">
+          <div class="speed-control">
+            <label for="speedSlider" class="slider-label">
+              <span>Speed:</span>
+              <strong id="speedLabel" class="highlight-gold">Normal (700ms)</strong>
+            </label>
+            <input type="range" id="speedSlider" min="50" max="1500" step="50" value="700" class="custom-slider">
+            <div class="speed-presets">
+              <button class="speed-chip" data-speed="1400">Slow</button>
+              <button class="speed-chip active" data-speed="700">Normal</button>
+              <button class="speed-chip" data-speed="250">Fast</button>
+              <button class="speed-chip" data-speed="50">Turbo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Insights Card -->
+      <div class="ai-insights card">
+        <div class="insights-header">
+          <div class="insights-title">
+            <span class="ai-icon">🧠</span>
+            <h3>Model Reasoning & Insights</h3>
+          </div>
+          <div class="expected-value-badge" title="Estimated final score based on PPO Critic Value V(s)">
+            <span class="badge-label">Expected Final:</span>
+            <span id="expectedScoreValue" class="badge-val">--</span>
+          </div>
+        </div>
+        <p id="aiExplanationText" class="insights-body">
+          Loading model suggestions...
+        </p>
+        <div id="aiDiceProbsContainer" class="dice-probs-row">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <!-- Action History / Move Log -->
+      <div class="history-card card">
+        <div class="history-header">
+          <h3 class="history-title">📜 Game Feed</h3>
+          <button id="clearLogBtn" class="btn-xs btn-ghost">Clear</button>
+        </div>
+        <div id="historyLog" class="history-log">
+          <!-- Log entries rendered dynamically -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Interactive Scorecard -->
+    <section class="scorecard-column">
+      <div class="scorecard-card card">
+        <div class="scorecard-header">
+          <h2 class="section-title">Scorecard</h2>
+          <span class="scorecard-hint" id="scorecardHint">Click an unfilled category to score</span>
+        </div>
+
+        <div class="table-container">
+          <table class="scorecard-table" id="scorecardTable">
+            <thead>
+              <tr>
+                <th class="col-cat">Category</th>
+                <th class="col-score">Score</th>
+                <th class="col-preview">AI Rec / Preview</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Upper Section Header -->
+              <tr class="section-divider-row">
+                <td colspan="3">UPPER SECTION</td>
+              </tr>
+
+              <!-- Upper Section Categories (0-5) -->
+              <tr class="cat-row" data-index="0" id="row-0">
+                <td class="cat-name">Ones (1s)</td>
+                <td class="cat-score" id="score-0">-</td>
+                <td class="cat-meta" id="meta-0"></td>
+              </tr>
+              <tr class="cat-row" data-index="1" id="row-1">
+                <td class="cat-name">Twos (2s)</td>
+                <td class="cat-score" id="score-1">-</td>
+                <td class="cat-meta" id="meta-1"></td>
+              </tr>
+              <tr class="cat-row" data-index="2" id="row-2">
+                <td class="cat-name">Threes (3s)</td>
+                <td class="cat-score" id="score-2">-</td>
+                <td class="cat-meta" id="meta-2"></td>
+              </tr>
+              <tr class="cat-row" data-index="3" id="row-3">
+                <td class="cat-name">Fours (4s)</td>
+                <td class="cat-score" id="score-3">-</td>
+                <td class="cat-meta" id="meta-3"></td>
+              </tr>
+              <tr class="cat-row" data-index="4" id="row-4">
+                <td class="cat-name">Fives (5s)</td>
+                <td class="cat-score" id="score-4">-</td>
+                <td class="cat-meta" id="meta-4"></td>
+              </tr>
+              <tr class="cat-row" data-index="5" id="row-5">
+                <td class="cat-name">Sixes (6s)</td>
+                <td class="cat-score" id="score-5">-</td>
+                <td class="cat-meta" id="meta-5"></td>
+              </tr>
+
+              <!-- Upper Section Summary & Bonus Progress -->
+              <tr class="summary-row upper-sum-row">
+                <td class="cat-name">Upper Total</td>
+                <td class="cat-score" id="upperSumScore">0 / 63</td>
+                <td class="cat-meta">
+                  <div class="progress-bar-container" title="Needs 63 pts for +50 Bonus">
+                    <div id="bonusProgressBar" class="progress-bar-fill" style="width: 0%;"></div>
+                  </div>
+                </td>
+              </tr>
+              <tr class="summary-row bonus-row" id="bonusRow">
+                <td class="cat-name">
+                  <span>Upper Bonus (+50)</span>
+                </td>
+                <td class="cat-score" id="bonusScore">0</td>
+                <td class="cat-meta" id="bonusStatus">Needs 63</td>
+              </tr>
+
+              <!-- Lower Section Header -->
+              <tr class="section-divider-row">
+                <td colspan="3">LOWER SECTION</td>
+              </tr>
+
+              <!-- Lower Section Categories (6-14) -->
+              <tr class="cat-row" data-index="6" id="row-6">
+                <td class="cat-name">One Pair</td>
+                <td class="cat-score" id="score-6">-</td>
+                <td class="cat-meta" id="meta-6"></td>
+              </tr>
+              <tr class="cat-row" data-index="7" id="row-7">
+                <td class="cat-name">Two Pairs</td>
+                <td class="cat-score" id="score-7">-</td>
+                <td class="cat-meta" id="meta-7"></td>
+              </tr>
+              <tr class="cat-row" data-index="8" id="row-8">
+                <td class="cat-name">Three of a Kind</td>
+                <td class="cat-score" id="score-8">-</td>
+                <td class="cat-meta" id="meta-8"></td>
+              </tr>
+              <tr class="cat-row" data-index="9" id="row-9">
+                <td class="cat-name">Four of a Kind</td>
+                <td class="cat-score" id="score-9">-</td>
+                <td class="cat-meta" id="meta-9"></td>
+              </tr>
+              <tr class="cat-row" data-index="10" id="row-10">
+                <td class="cat-name">Small Straight (1-5)</td>
+                <td class="cat-score" id="score-10">-</td>
+                <td class="cat-meta" id="meta-10"></td>
+              </tr>
+              <tr class="cat-row" data-index="11" id="row-11">
+                <td class="cat-name">Large Straight (2-6)</td>
+                <td class="cat-score" id="score-11">-</td>
+                <td class="cat-meta" id="meta-11"></td>
+              </tr>
+              <tr class="cat-row" data-index="12" id="row-12">
+                <td class="cat-name">Full House</td>
+                <td class="cat-score" id="score-12">-</td>
+                <td class="cat-meta" id="meta-12"></td>
+              </tr>
+              <tr class="cat-row" data-index="13" id="row-13">
+                <td class="cat-name">Chance</td>
+                <td class="cat-score" id="score-13">-</td>
+                <td class="cat-meta" id="meta-13"></td>
+              </tr>
+              <tr class="cat-row yatzy-row" data-index="14" id="row-14">
+                <td class="cat-name">🌟 Yatzy (5 of a Kind)</td>
+                <td class="cat-score" id="score-14">-</td>
+                <td class="cat-meta" id="meta-14"></td>
+              </tr>
+
+              <!-- Grand Total -->
+              <tr class="summary-row grand-total-row">
+                <td class="cat-name">GRAND TOTAL</td>
+                <td class="cat-score highlight-emerald" id="grandTotalScore">0</td>
+                <td class="cat-meta" id="totalRankText">Game in progress</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Game Over Modal -->
+  <div id="gameOverModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-confetti" id="modalConfetti"></div>
+      <div class="modal-badge" id="modalBadge">🎉 GAME COMPLETE</div>
+      <h2 class="modal-title" id="modalTitle">Awesome Run!</h2>
+      <div class="modal-score-wrap">
+        <span class="modal-score-label">Final Score</span>
+        <span id="modalFinalScore" class="modal-final-score">230</span>
+      </div>
+      <div class="modal-stats-grid">
+        <div class="modal-stat-box">
+          <span class="stat-box-label">Upper Section</span>
+          <strong id="modalUpperScore" class="stat-box-val">68</strong>
+        </div>
+        <div class="modal-stat-box">
+          <span class="stat-box-label">Bonus (+50)</span>
+          <strong id="modalBonusStatus" class="stat-box-val highlight-emerald">Achieved ✓</strong>
+        </div>
+        <div class="modal-stat-box">
+          <span class="stat-box-label">Personal Best</span>
+          <strong id="modalBestScore" class="stat-box-val highlight-gold">235</strong>
+        </div>
+      </div>
+      <p id="modalPerformanceFeedback" class="modal-feedback-text">
+        Top tier strategy matching master level agent play!
+      </p>
+      <div class="modal-actions">
+        <button id="modalNewGameBtn" class="btn btn-primary btn-lg">
+          <span>🔄</span> Play Another Game
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
